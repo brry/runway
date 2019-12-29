@@ -1,10 +1,24 @@
 # osm running tracks on interactive map
 # Berry Boessenkool, Dec 2019, berry-b@gmx.de
 
+# toDo: 
+# - pan/zoom to layer group
+# - publish app
+# - link to in readme
+# - clean up code, add outline
+# - move track code into separate function like readGPX 
+
+
 library(shiny) # fluidPage, p, actionButton, checkboxInput, eventReactive, showNotification, shinyApp
 library(leaflet) # leafletOutput, leaflet, addTiles, fitBounds, addMeasure, addPolylines, addPolygons
 library(leaflet.extras) # addControlGPS, gpsOptions
 library(osmdata) # opq, add_osm_feature, osmdata_sf
+
+default_map_area <- c(52.41, 13.04, 52.40, 13.03) # Potsdam
+default_map_area <- c(53.22, 12.61, 53.20, 12.57) # Berlinchen
+if(F) {bnd <- default_map_area ; leaflet() %>% addTiles() %>% 
+  fitBounds(bnd[2],bnd[1],bnd[4],bnd[3]) %>% 
+  addMarkers(lng=bnd[c(2,2,4,4)], lat=bnd[c(1,3,1,3)])}
 
 # function to generate popup displays from df rows:
 popleaf2 <- function(df) # see also berryFunctions::popleaf
@@ -13,7 +27,7 @@ popleaf2 <- function(df) # see also berryFunctions::popleaf
   df <- df[,colnames(df)!="geometry"] # apparently doesn't work for sf
   sel <- colnames(df)
   hw <- which(sel=="highway")
-  sel <- c(sel[hw], sel[-hw])
+  if(length(hw)==1) sel <- c(sel[hw], sel[-hw])
   apply(df, MARGIN=1, function(x)
     {
     nna <- !is.na(x[sel])
@@ -21,13 +35,35 @@ popleaf2 <- function(df) # see also berryFunctions::popleaf
     })
 }
 
+# function to add GPX record to map
+readGPX <- function(gpxfile) # see also github.com/brry/visGPX
+  {
+  df <- plotKML::readGPX(gpxfile)
+  df <- df$tracks[[1]][[1]]
+  df$ele <- round(as.numeric(df$ele),1)
+  df$time <- strptime(df$time, format="%Y-%m-%dT%H:%M:%SZ")
+  df$dist <- OSMscale::earthDist("lat", "lon", data=df, along=TRUE)
+  df$dist <- cumsum(df$dist) # path length in km
+  kms <- max(round(df$dist))
+  if(kms>=1)
+    {
+    kms <- seq(1,kms,1)
+    kmark <- sapply(kms, function(x) which.min(abs(df$dist-x)))
+    } else
+    kmark <- NULL
+  df$dist <- round(df$dist,3)
+  df$display <- popleaf2(df)
+  return(list(df=df, kmark=kmark, kms=kms))
+  }
+
   
 ui <- fillPage(
-  leafletOutput("runwaymap", width="100%", height="95%"),
-  fillRow(flex=c(0.1,3,3), width="100%",
-  p(" "),
+  leafletOutput("runwaymap", width="100%", height="92%"),
+  fillRow(
   p(HTML('App by Berry Boessenkool, 2019. <a href="mailto:berry-b@gmx.de">Email</a>, <a href="https://brry.github.io">Homepage</a>')),
-  actionButton("get_tracks", "get runnning tracks in this area")
+  actionButton("get_tracks", "get runnning tracks in this area"),
+  fileInput("import_gpx", NULL, buttonLabel="import GPX", accept="gpx")
+  #actionButton("import_gpx","import GPX")
   )
 )
 
@@ -50,6 +86,11 @@ tracks <- eventReactive(input$get_tracks, {
   names(tracks$geometry) <- NULL # https://github.com/ropensci/osmdata/issues/100
   names(polygs$geometry) <- NULL
   list(bbox=bbox, tracks=tracks, polygs=polygs)
+  }, ignoreNULL=FALSE)
+
+gpx <- eventReactive(input$import_gpx, {
+  if(is.null(input$import_gpx)) return()
+  readGPX(input$import_gpx$datapath)
   }, ignoreNULL=FALSE)
 
 output$runwaymap <- renderLeaflet({
@@ -75,7 +116,7 @@ output$runwaymap <- renderLeaflet({
     ct$polygs$popup <- popleaf2(ct$polygs)
     } 
   # select map bounds (default on first app run   or   current):
-  bnd <- if(first) c(52.41, 13.04, 52.40, 13.03) else 
+  bnd <- if(first) default_map_area else 
                    unlist(input$runwaymap_bounds, use.names=FALSE)
   # create map, add controls:
   rmap <- leaflet() %>% addTiles() %>% fitBounds(bnd[2],bnd[1],bnd[4],bnd[3]) %>% 
@@ -96,8 +137,14 @@ output$runwaymap <- renderLeaflet({
           "Esri.WorldImagery", "OpenTopoMap") # mapview::mapviewGetOption("basemaps")
   for(pr in prov) rmap <- rmap %>% addProviderTiles(pr, group=pr)
   rmap <- rmap %>% addLayersControl(baseGroups=prov,
-      overlayGroups=c("tracks","residential", "private"),
+      overlayGroups=c("tracks","residential", "private", "gpx"),
       options=layersControlOptions(collapsed=FALSE))
+  cg <- gpx()
+  if(!is.null(cg$df)) rmap <- rmap %>% addCircleMarkers(~lon, ~lat, data=cg$df, 
+      popup=~display, stroke=FALSE, color="black", radius=3, group="gpx")
+  if(!is.null(cg$kmark)) rmap <- rmap %>% addLabelOnlyMarkers(
+      lng=cg$df$lon[cg$kmark], lat=cg$df$lat[cg$kmark], label=paste(cg$kms,"km"), labelOptions=
+      labelOptions(noHide=TRUE,textsize="14px",textOnly=TRUE), group="gpx")
   rmap
   })
 }
