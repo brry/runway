@@ -5,8 +5,15 @@
 # - pan/zoom to layer group
 # - publish app
 # - link to in readme
-# - add readGPX checks for column existence 
-# - add downloadTracks check for large region
+# - add example GPS track
+# - reduce number of files in repo
+# - rename dev.R script to app.R
+# - trace occasional error: attr(obj, "sf_column") does not point to a geometry column
+# - figure out why it shows only residential tracks for Berlinchen
+# - figure out why the app reloads map frantically after get tracks, then zoom in, then pan
+# - vectorize GPX column checks
+# - largeBox warning should not reset map area!
+
 
 # 0. Packages ------------------------------------------------------------------
 library(shiny) # fluidPage, p, actionButton, checkboxInput, eventReactive, showNotification, shinyApp
@@ -14,6 +21,7 @@ library(leaflet) # leafletOutput, leaflet, addTiles, fitBounds, addMeasure, addP
 library(leaflet.extras) # addControlGPS, gpsOptions
 library(osmdata) # opq, add_osm_feature, osmdata_sf
 
+default_map_area <- c(53.0,  12.0,  53.1,  12.1) # largebox >0.1 Test
 default_map_area <- c(52.41, 13.04, 52.40, 13.03) # Potsdam
 default_map_area <- c(53.22, 12.61, 53.20, 12.57) # Berlinchen
 if(F) {bnd <- default_map_area ; leaflet() %>% addTiles() %>% 
@@ -42,6 +50,9 @@ readGPX <- function(gpxfile) # see also github.com/brry/visGPX
   df <- plotKML::readGPX(gpxfile)
   df <- df$tracks[[1]][[1]]
   # check for columns: toDo
+  if(!is.data.frame(df)) stop("The GPX file was not read as a data.frame, but a ", class(df))
+  for(cn in c("lon","lat","ele","time"))
+    if(!cn %in% colnames(df)) stop("The GPX df does not contain the column '", cn,"'")
   df$ele <- round(as.numeric(df$ele),1)
   df$time <- strptime(df$time, format="%Y-%m-%dT%H:%M:%SZ")
   df$dist <- OSMscale::earthDist("lat", "lon", data=df, along=TRUE)
@@ -62,7 +73,6 @@ readGPX <- function(gpxfile) # see also github.com/brry/visGPX
 downloadTracks <- function(bbox)
   {
   bbox <- unlist(bbox, use.names=FALSE)
-  # warn about too large region: toDo
   # get OSM streets for bbox:
   streets <- opq(bbox=c(bbox[4], bbox[3], bbox[2], bbox[1])) %>% 
              add_osm_feature(key="highway") %>% osmdata_sf()
@@ -77,6 +87,24 @@ downloadTracks <- function(bbox)
   list(bbox=bbox, tracks=tracks, polygs=polygs)
   }
 
+
+# warning for large bboxes:
+largeBoxEnv <- new.env()
+assign("first", TRUE, envir=largeBoxEnv) # initiate with TRUE
+largeBox <- function(bbox) # output T/F
+  {
+  if(!largeBoxEnv$first) return(FALSE) # show no large box warning
+  showModal(modalDialog(title="Possibly large data request.",
+    p("The current map area is very large and will contain many OSM tracks."), 
+    p("Nothing will be downloaded until you click 'get running tracks' again."),
+    p("You might want to zoom in before doing that."), 
+    p("This message will not re-appear, regardless of future zoom levels."),
+    fade=FALSE, footer=modalButton("OK")))
+  assign("first", FALSE, envir=largeBoxEnv) # no longer first occurence
+  return(TRUE) # show large box warning (and don't download)
+  }
+
+
 # 2. App layout ----------------------------------------------------------------  
 ui <- fillPage(
   leafletOutput("runwaymap", width="100%", height="92%"),
@@ -84,7 +112,6 @@ ui <- fillPage(
   p(HTML('App by Berry Boessenkool, 2019. <a href="mailto:berry-b@gmx.de">Email</a>, <a href="https://brry.github.io">Homepage</a>')),
   actionButton("get_tracks", "get runnning tracks in this area"),
   fileInput("import_gpx", NULL, buttonLabel="import GPX", accept="gpx")
-  #actionButton("import_gpx","import GPX")
   )
 )
 
@@ -94,6 +121,7 @@ server <- function(input, output, session) {
 tracks <- eventReactive(input$get_tracks, {
   bbox <- input$runwaymap_bounds
   if(is.null(bbox)) return() # for first run of the app
+  if(input$runwaymap_zoom<12) if(largeBox()) return(list(bbox=bbox)) # for first large bbox
   downloadTracks(bbox)
   }, ignoreNULL=FALSE)
 
