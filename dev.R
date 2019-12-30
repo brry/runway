@@ -5,10 +5,10 @@
 # - pan/zoom to layer group
 # - publish app
 # - link to in readme
-# - clean up code, add outline
-# - move track code into separate function like readGPX 
+# - add readGPX checks for column existence 
+# - add downloadTracks check for large region
 
-
+# 0. Packages ------------------------------------------------------------------
 library(shiny) # fluidPage, p, actionButton, checkboxInput, eventReactive, showNotification, shinyApp
 library(leaflet) # leafletOutput, leaflet, addTiles, fitBounds, addMeasure, addPolylines, addPolygons
 library(leaflet.extras) # addControlGPS, gpsOptions
@@ -20,7 +20,8 @@ if(F) {bnd <- default_map_area ; leaflet() %>% addTiles() %>%
   fitBounds(bnd[2],bnd[1],bnd[4],bnd[3]) %>% 
   addMarkers(lng=bnd[c(2,2,4,4)], lat=bnd[c(1,3,1,3)])}
 
-# function to generate popup displays from df rows:
+# 1. Functions -----------------------------------------------------------------
+# generate popup displays from df rows:
 popleaf2 <- function(df) # see also berryFunctions::popleaf
   {
   df <- as.data.frame(df)
@@ -33,13 +34,14 @@ popleaf2 <- function(df) # see also berryFunctions::popleaf
     nna <- !is.na(x[sel])
     paste(sub("highway", "type", sel[nna]), ": ", x[sel[nna]], collapse="<br>")
     })
-}
+  }
 
 # function to add GPX record to map
 readGPX <- function(gpxfile) # see also github.com/brry/visGPX
   {
   df <- plotKML::readGPX(gpxfile)
   df <- df$tracks[[1]][[1]]
+  # check for columns: toDo
   df$ele <- round(as.numeric(df$ele),1)
   df$time <- strptime(df$time, format="%Y-%m-%dT%H:%M:%SZ")
   df$dist <- OSMscale::earthDist("lat", "lon", data=df, along=TRUE)
@@ -53,25 +55,12 @@ readGPX <- function(gpxfile) # see also github.com/brry/visGPX
     kmark <- NULL
   df$dist <- round(df$dist,3)
   df$display <- popleaf2(df)
-  return(list(df=df, kmark=kmark, kms=kms))
+  list(df=df, kmark=kmark, kms=kms)
   }
 
-  
-ui <- fillPage(
-  leafletOutput("runwaymap", width="100%", height="92%"),
-  fillRow(
-  p(HTML('App by Berry Boessenkool, 2019. <a href="mailto:berry-b@gmx.de">Email</a>, <a href="https://brry.github.io">Homepage</a>')),
-  actionButton("get_tracks", "get runnning tracks in this area"),
-  fileInput("import_gpx", NULL, buttonLabel="import GPX", accept="gpx")
-  #actionButton("import_gpx","import GPX")
-  )
-)
-
-server <- function(input, output, session) {
-tracks <- eventReactive(input$get_tracks, {
-  # current bounding box:
-  bbox <- input$runwaymap_bounds
-  if(is.null(bbox)) return() # for first run of the app
+# download streets and tracks for certain region
+downloadTracks <- function(bbox)
+  {
   bbox <- unlist(bbox, use.names=FALSE)
   # warn about too large region: toDo
   # get OSM streets for bbox:
@@ -86,13 +75,35 @@ tracks <- eventReactive(input$get_tracks, {
   names(tracks$geometry) <- NULL # https://github.com/ropensci/osmdata/issues/100
   names(polygs$geometry) <- NULL
   list(bbox=bbox, tracks=tracks, polygs=polygs)
+  }
+
+# 2. App layout ----------------------------------------------------------------  
+ui <- fillPage(
+  leafletOutput("runwaymap", width="100%", height="92%"),
+  fillRow(
+  p(HTML('App by Berry Boessenkool, 2019. <a href="mailto:berry-b@gmx.de">Email</a>, <a href="https://brry.github.io">Homepage</a>')),
+  actionButton("get_tracks", "get runnning tracks in this area"),
+  fileInput("import_gpx", NULL, buttonLabel="import GPX", accept="gpx")
+  #actionButton("import_gpx","import GPX")
+  )
+)
+
+
+# 3. App inputs ----------------------------------------------------------------
+server <- function(input, output, session) {
+tracks <- eventReactive(input$get_tracks, {
+  bbox <- input$runwaymap_bounds
+  if(is.null(bbox)) return() # for first run of the app
+  downloadTracks(bbox)
   }, ignoreNULL=FALSE)
 
 gpx <- eventReactive(input$import_gpx, {
-  if(is.null(input$import_gpx)) return()
+  if(is.null(input$import_gpx)) return() # if no file is imported
   readGPX(input$import_gpx$datapath)
   }, ignoreNULL=FALSE)
 
+
+# 4. Computation ---------------------------------------------------------------
 output$runwaymap <- renderLeaflet({
   ct <- tracks() # ct: current tracks
   first <- is.null(ct$bbox)
@@ -114,7 +125,9 @@ output$runwaymap <- renderLeaflet({
   if(haspolygs){
     ct$polygs$highway[is.na(ct$polygs$highway)] <- "NA"
     ct$polygs$popup <- popleaf2(ct$polygs)
-    } 
+    }
+
+# 5. Create map ----------------------------------------------------------------
   # select map bounds (default on first app run   or   current):
   bnd <- if(first) default_map_area else 
                    unlist(input$runwaymap_bounds, use.names=FALSE)
@@ -129,7 +142,7 @@ output$runwaymap <- renderLeaflet({
     rmap <- addPolylines(rmap, data=tracks,  popup=~popup, group="tracks")
     rmap <- addPolylines(rmap, data=residen, popup=~popup, group="residential")
     rmap <- addPolylines(rmap, data=private, popup=~popup, group="private")
-  }
+    }
   if(haspolygs) 
     rmap <- addPolygons( rmap, data=ct$polygs, popup=~popup, group="tracks")
   # add background map layer options:
@@ -143,8 +156,8 @@ output$runwaymap <- renderLeaflet({
   if(!is.null(cg$df)) rmap <- rmap %>% addCircleMarkers(~lon, ~lat, data=cg$df, 
       popup=~display, stroke=FALSE, color="black", radius=3, group="gpx")
   if(!is.null(cg$kmark)) rmap <- rmap %>% addLabelOnlyMarkers(
-      lng=cg$df$lon[cg$kmark], lat=cg$df$lat[cg$kmark], label=paste(cg$kms,"km"), labelOptions=
-      labelOptions(noHide=TRUE,textsize="14px",textOnly=TRUE), group="gpx")
+      lng=cg$df$lon[cg$kmark], lat=cg$df$lat[cg$kmark], label=paste(cg$kms,"km"), 
+      labelOptions=labelOptions(noHide=TRUE,textsize="14px",textOnly=TRUE), group="gpx")
   rmap
   })
 }
