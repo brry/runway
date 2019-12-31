@@ -9,14 +9,15 @@
 
 
 # 0. Packages ------------------------------------------------------------------
+try(detachAll()) # unload berry's local packages
 library(shiny) # fluidPage, p, actionButton, checkboxInput, eventReactive, showNotification, shinyApp
 library(leaflet) # leafletOutput, leaflet, addTiles, fitBounds, addMeasure, addPolylines, addPolygons
 library(leaflet.extras) # addControlGPS, gpsOptions
 library(osmdata) # opq, add_osm_feature, osmdata_sf
 
 default_map_area <- c(53.0,  12.0,  53.1,  12.1) # largebox >0.1 Test
-default_map_area <- c(52.41, 13.04, 52.40, 13.03) # Potsdam
 default_map_area <- c(53.22, 12.61, 53.20, 12.57) # Berlinchen
+default_map_area <- c(52.41, 13.04, 52.40, 13.03) # Potsdam
 if(F) {bnd <- default_map_area ; leaflet() %>% addTiles() %>% 
   fitBounds(bnd[2],bnd[1],bnd[4],bnd[3]) %>% 
   addMarkers(lng=bnd[c(2,2,4,4)], lat=bnd[c(1,3,1,3)])}
@@ -115,7 +116,7 @@ checkZoom <- function(zoom) # no output, side effect conditionally warning / err
 ui <- fillPage(
   leafletOutput("runwaymap", width="100%", height="92%"),
   fillRow(
-  p(HTML('App by Berry Boessenkool, 2019. <a href="mailto:berry-b@gmx.de">Email</a>, <a href="https://brry.github.io">Homepage</a>')),
+  p(HTML('App by Berry B. <a href="https://github.com/brry/runway#runway">More</a>')),
   actionButton("get_tracks", "get runnning tracks in this area"),
   fileInput("import_gpx", NULL, buttonLabel="import GPX", accept="gpx")
   )
