@@ -61,16 +61,17 @@ readGPX <- function(gpxfile) # see also github.com/brry/visGPX
   df$dist <- OSMscale::earthDist("lat", "lon", data=df, along=TRUE)
   df$dist <- cumsum(df$dist) # path length in km
   # create km markers:
-  kms <- max(round(df$dist))
-  if(kms>=1)
+  k_mark <- max(round(df$dist))
+  if(k_mark>=1)
     {
-    kms <- seq(1,kms,1)
-    kmark <- sapply(kms, function(x) which.min(abs(df$dist-x)))
+    k_mark <- seq(1,k_mark,1)
+    k_ind <- sapply(k_mark, function(x) which.min(abs(df$dist-x)))
+    k_loc <- data.frame(lon=df$lon[k_ind], lat=df$lat[k_ind])
     } else
-    kmark <- NULL
+    k_loc <- NULL
   df$dist <- round(df$dist,3)
   df$display <- popleaf2(df)
-  list(df=df, kmark=kmark, kms=kms)
+  list(df=df, k_loc=k_loc, k_mark=k_mark)
   }
 
 # download streets and tracks for certain region
@@ -185,8 +186,8 @@ output$runwaymap <- renderLeaflet({
   cg <- gpx()
   if(!is.null(cg$df)) rmap <- rmap %>% addCircleMarkers(~lon, ~lat, data=cg$df, 
       popup=~display, stroke=FALSE, color="black", radius=3, group="gpx")
-  if(!is.null(cg$kmark)) rmap <- rmap %>% addLabelOnlyMarkers(
-      lng=cg$df$lon[cg$kmark], lat=cg$df$lat[cg$kmark], label=paste(cg$kms,"km"), 
+  if(!is.null(cg$k_loc)) rmap <- rmap %>% addLabelOnlyMarkers(
+      lng=cg$k_loc$lon, lat=cg$k_loc$lat, label=paste(cg$k_mark,"km"), 
       labelOptions=labelOptions(noHide=TRUE,textsize="14px",textOnly=TRUE), group="gpx")
   rmap
   })
