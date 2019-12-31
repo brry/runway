@@ -9,7 +9,6 @@
 
 
 # 0. Packages ------------------------------------------------------------------
-try(detachAll()) # unload berry's local packages
 library(shiny) # fluidPage, p, actionButton, checkboxInput, eventReactive, showNotification, shinyApp
 library(leaflet) # leafletOutput, leaflet, addTiles, fitBounds, addMeasure, addPolylines, addPolygons
 library(leaflet.extras) # addControlGPS, gpsOptions
@@ -24,7 +23,7 @@ if(F) {bnd <- default_map_area ; leaflet() %>% addTiles() %>%
 
 # 1. Functions -----------------------------------------------------------------
 # generate popup displays from df rows:
-popleaf2 <- function(df) # see also berryFunctions::popleaf
+popleaf2 <- function(df) # see also berryFunctions - popleaf
   {
   df <- as.data.frame(df)
   df <- df[,colnames(df)!="geometry"] # apparently doesn't work for sf
@@ -36,6 +35,24 @@ popleaf2 <- function(df) # see also berryFunctions::popleaf
     nna <- !is.na(x[sel])
     paste(sub("highway", "type", sel[nna]), ": ", x[sel[nna]], collapse="<br>")
     })
+  }
+
+# distance between lat-long points
+earthDist <- function(lat, long, r=6371) #  see also OSMscale - earthDist
+  {
+  n <- length(lat)
+  y1 <-  lat[-1]*pi/180
+  x1 <- long[-1]*pi/180
+  y2 <-  lat[-n]*pi/180
+  x2 <- long[-n]*pi/180
+  cosinusangle <- sin(y1)*sin(y2) + cos(y1)*cos(y2)*cos(x1-x2)
+  cosinusangle <- replace(cosinusangle, cosinusangle>1, 1)
+  angle <- acos( cosinusangle )
+  tol <- sqrt(.Machine$double.eps) # equality tolerance
+  samepoint <-    abs(x2-x1) < tol  &   abs(y2-y1) < tol
+  angle[samepoint] <- 0 # to compensate numerical inaccuracies
+  angle <- c(0, angle)
+  r*angle
   }
 
 # function to add GPX record to map
@@ -54,7 +71,7 @@ readGPX <- function(gpxfile) # see also github.com/brry/visGPX
   # format columns, add distance:
   df$ele <- round(as.numeric(df$ele),1)
   df$time <- strptime(df$time, format="%Y-%m-%dT%H:%M:%SZ")
-  df$dist <- OSMscale::earthDist("lat", "lon", data=df, along=TRUE)
+  df$dist <- earthDist(df$lat, df$lon)
   df$dist <- cumsum(df$dist) # path length in km
   # create km markers:
   k_mark <- max(round(df$dist))
@@ -96,8 +113,7 @@ downloadTracks <- function(bbox)
   list(bbox=bbox, tracks=tracks, polygs=polygs)
   }
 
-
-# warning for large bboxes:
+# warning for large bboxes
 checkZoom <- function(zoom) # no output, side effect conditionally warning / error
   {
   if(zoom<10) stop(safeError(paste0("You've zoomed out too far (level ",zoom,
