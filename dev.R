@@ -12,7 +12,6 @@
 # - figure out why it shows only residential tracks for Berlinchen
 # - figure out why the app reloads map frantically after get tracks, then zoom in, then pan
 # - vectorize GPX column checks
-# - largeBox warning should not reset map area!
 
 
 # 0. Packages ------------------------------------------------------------------
@@ -89,19 +88,17 @@ downloadTracks <- function(bbox)
 
 
 # warning for large bboxes:
-largeBoxEnv <- new.env()
-assign("first", TRUE, envir=largeBoxEnv) # initiate with TRUE
-largeBox <- function(bbox) # output T/F
+checkZoom <- function(zoom) # no output, side effect conditionally warning / error
   {
-  if(!largeBoxEnv$first) return(FALSE) # show no large box warning
-  showModal(modalDialog(title="Possibly large data request.",
+  if(zoom<10) stop(safeError(paste0("You've zoomed out too far (level ",zoom,
+     "). I won't request OSM tracks for such a large region. ",
+     "Copy the source code at github.com/brry/runway, ", 
+     "remove this error and run the app locally if you really want to.")))
+  if(zoom<12)
+  showModal(modalDialog(title=paste("Large data request. Current zoom level:",zoom),
     p("The current map area is very large and will contain many OSM tracks."), 
-    p("Nothing will be downloaded until you click 'get running tracks' again."),
-    p("You might want to zoom in before doing that."), 
-    p("This message will not re-appear, regardless of future zoom levels."),
+    p("The download may take a while..."), 
     fade=FALSE, footer=modalButton("OK")))
-  assign("first", FALSE, envir=largeBoxEnv) # no longer first occurence
-  return(TRUE) # show large box warning (and don't download)
   }
 
 
@@ -121,7 +118,7 @@ server <- function(input, output, session) {
 tracks <- eventReactive(input$get_tracks, {
   bbox <- input$runwaymap_bounds
   if(is.null(bbox)) return() # for first run of the app
-  if(input$runwaymap_zoom<12) if(largeBox()) return(list(bbox=bbox)) # for first large bbox
+  checkZoom(input$runwaymap_zoom)
   downloadTracks(bbox)
   }, ignoreNULL=FALSE)
 
