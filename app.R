@@ -7,7 +7,6 @@
 # - link to in readme
 # - add example GPS track
 # - reduce number of files in repo
-# - rename dev.R script to app.R
 # - trace occasional error: attr(obj, "sf_column") does not point to a geometry column
 # - figure out why the app reloads map frantically after get tracks, then zoom in, then pan
 
