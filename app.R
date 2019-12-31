@@ -5,6 +5,7 @@
 # - pan/zoom to layer group
 # - publish app + update readme
 # - figure out why the app reloads map frantically after get tracks, then zoom in, then pan
+# - after adding tracks, panning with a non-default bg map causes leaflet to reset to OSM bg 
 
 
 # 0. Packages ------------------------------------------------------------------
@@ -176,6 +177,9 @@ output$runwaymap <- renderLeaflet({
     rmap <- addPolylines(rmap, data=tracks,  popup=~popup, group="tracks")
     rmap <- addPolylines(rmap, data=residen, popup=~popup, group="residential")
     rmap <- addPolylines(rmap, data=private, popup=~popup, group="private")
+    } else
+    {
+    rmap <- hideGroup(rmap, "tracks") %>% hideGroup("residential")
     }
   if(haspolygs) 
     rmap <- addPolygons( rmap, data=ct$polygs, popup=~popup, group="tracks")
@@ -186,9 +190,11 @@ output$runwaymap <- renderLeaflet({
   rmap <- rmap %>% addLayersControl(baseGroups=prov,
       overlayGroups=c("tracks","residential", "private", "gpx"),
       options=layersControlOptions(collapsed=FALSE))
+  rmap <- hideGroup(rmap, "private")
   cg <- gpx()
   if(!is.null(cg$df)) rmap <- rmap %>% addCircleMarkers(~lon, ~lat, data=cg$df, 
-      popup=~display, stroke=FALSE, color="black", radius=3, group="gpx")
+      popup=~display, stroke=FALSE, color="black", radius=3, group="gpx") else
+    rmap <- hideGroup(rmap, "gpx")
   if(!is.null(cg$k_loc)) rmap <- rmap %>% addLabelOnlyMarkers(
       lng=cg$k_loc$lon, lat=cg$k_loc$lat, label=paste(cg$k_mark,"km"), 
       labelOptions=labelOptions(noHide=TRUE,textsize="14px",textOnly=TRUE), group="gpx")
