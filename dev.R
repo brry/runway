@@ -9,7 +9,6 @@
 # - reduce number of files in repo
 # - rename dev.R script to app.R
 # - trace occasional error: attr(obj, "sf_column") does not point to a geometry column
-# - figure out why it shows only residential tracks for Berlinchen
 # - figure out why the app reloads map frantically after get tracks, then zoom in, then pan
 
 
@@ -149,6 +148,7 @@ output$runwaymap <- renderLeaflet({
     ct$tracks$popup <- popleaf2(ct$tracks)
     residen <- ct$tracks$highway %in% c("residential", "service")#, "footway")
     private <- ct$tracks$access  %in% c("no","private")
+    if(is.null(ct$tracks$access)) private <- FALSE
     tracks  <- ct$tracks[!residen & !private,]
     residen <- ct$tracks[residen,]
     private <- ct$tracks[private,]
