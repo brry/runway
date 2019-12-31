@@ -11,7 +11,6 @@
 # - trace occasional error: attr(obj, "sf_column") does not point to a geometry column
 # - figure out why it shows only residential tracks for Berlinchen
 # - figure out why the app reloads map frantically after get tracks, then zoom in, then pan
-# - vectorize GPX column checks
 
 
 # 0. Packages ------------------------------------------------------------------
@@ -46,16 +45,22 @@ popleaf2 <- function(df) # see also berryFunctions::popleaf
 # function to add GPX record to map
 readGPX <- function(gpxfile) # see also github.com/brry/visGPX
   {
-  df <- plotKML::readGPX(gpxfile)
+  df <- try(plotKML::readGPX(gpxfile), silent=TRUE)
+  if(inherits(df,"try-error")) stop("Reading the GPX file failed. Error message by ",
+                                    "'plotKML::readGPX':\n", df)
   df <- df$tracks[[1]][[1]]
-  # check for columns: toDo
+  # check for columns:
   if(!is.data.frame(df)) stop("The GPX file was not read as a data.frame, but a ", class(df))
-  for(cn in c("lon","lat","ele","time"))
-    if(!cn %in% colnames(df)) stop("The GPX df does not contain the column '", cn,"'")
+  cn <- c("lon","lat","ele","time")
+  present <- cn %in% colnames(df)
+  if(any(!present)) stop("The GPX df does not contain the following column(s): ", 
+                         toString(cn[!present]),".")
+  # format columns, add distance:
   df$ele <- round(as.numeric(df$ele),1)
   df$time <- strptime(df$time, format="%Y-%m-%dT%H:%M:%SZ")
   df$dist <- OSMscale::earthDist("lat", "lon", data=df, along=TRUE)
   df$dist <- cumsum(df$dist) # path length in km
+  # create km markers:
   kms <- max(round(df$dist))
   if(kms>=1)
     {
