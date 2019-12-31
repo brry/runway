@@ -1,13 +1,6 @@
 # osm running tracks on interactive map
 # Berry Boessenkool, Dec 2019, berry-b@gmx.de
 
-# toDo: 
-# - pan/zoom to layer group
-# - publish app + update readme
-# - figure out why the app reloads map frantically after get tracks, then zoom in, then pan
-# - after adding tracks, panning with a non-default bg map causes leaflet to reset to OSM bg 
-
-
 # 0. Packages ------------------------------------------------------------------
 library(shiny) # fluidPage, p, actionButton, checkboxInput, eventReactive, showNotification, shinyApp
 library(leaflet) # leafletOutput, leaflet, addTiles, fitBounds, addMeasure, addPolylines, addPolygons
