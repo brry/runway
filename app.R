@@ -3,9 +3,7 @@
 
 # toDo: 
 # - pan/zoom to layer group
-# - publish app
-# - link to in readme
-# - add example GPS track
+# - publish app + update readme
 # - trace occasional error: attr(obj, "sf_column") does not point to a geometry column
 # - figure out why the app reloads map frantically after get tracks, then zoom in, then pan
 
@@ -42,7 +40,7 @@ popleaf2 <- function(df) # see also berryFunctions::popleaf
 # function to add GPX record to map
 readGPX <- function(gpxfile) # see also github.com/brry/visGPX
   {
-  df <- try(plotKML::readGPX(gpxfile), silent=TRUE)
+  df <- try(plotKML::readGPX(gpxfile, metadata=FALSE,bounds=FALSE,waypoints=FALSE), silent=TRUE)
   if(inherits(df,"try-error")) stop("Reading the GPX file failed. Error message by ",
                                     "'plotKML::readGPX':\n", df)
   df <- df$tracks[[1]][[1]]
