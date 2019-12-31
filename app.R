@@ -4,7 +4,6 @@
 # toDo: 
 # - pan/zoom to layer group
 # - publish app + update readme
-# - trace occasional error: attr(obj, "sf_column") does not point to a geometry column
 # - figure out why the app reloads map frantically after get tracks, then zoom in, then pan
 
 
@@ -79,11 +78,19 @@ downloadTracks <- function(bbox)
   # prepare output:
   tracks <- streets$osm_lines
   polygs <- streets$osm_polygons
+  # geometry error on each first run in fresh R session: 
+  # attr(obj, "sf_column") does not point to a geometry column
+  tt1 <- try(sf::st_geometry(tracks)) # having this prevents the geometry error! WTF...
   # exclude big roads:
   exclude <-  c("primary", "secondary", "tertiary", "motorway", "motorway_link")
   tracks <- tracks[!tracks$highway %in% exclude,]
   names(tracks$geometry) <- NULL # https://github.com/ropensci/osmdata/issues/100
   names(polygs$geometry) <- NULL
+  tt <- try(sf::st_geometry(tracks)) # the error would otherwise occur later in addPolylines
+  if(inherits(tt, "try-error")) stop(paste0("Something went wrong, ",
+    "probably in creating the geometry column of the data.\n",
+    "Simply try again, that should normally work fine.\n\n",
+    "Debugging info: ", tt))
   list(bbox=bbox, tracks=tracks, polygs=polygs)
   }
 
