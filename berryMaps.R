@@ -124,8 +124,8 @@ if(F) leaflet() %>% addTiles() %>% fitBounds(bnd[2],bnd[1],bnd[4],bnd[3]) %>%
   for(pr in prov) rmap <- rmap %>% addProviderTiles(pr, group=pr)
   rmap <- rmap %>% addLayersControl(baseGroups=prov,
       overlayGroups=c("tracks","residential", "private", "large roads"),
-      options=layersControlOptions(collapsed=FALSE))
-  #hideGroup("private", "large roads")
+      options=layersControlOptions(collapsed=FALSE)) %>% 
+  hideGroup(c("private", "large roads"))
   rmap
   }
 
