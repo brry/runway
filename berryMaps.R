@@ -87,13 +87,16 @@ addGroups <- function(map, ct)
 
 
 bnd <- c(53.28, 12.73, 53.21, 12.59) # Sewekow large
-
-if(F) leaflet() %>% addTiles() %>% fitBounds(bnd[2],bnd[1],bnd[4],bnd[3]) %>% 
-                    addMarkers(lng=bnd[c(2,2,4,4)], lat=bnd[c(1,3,1,3)])
-
 ct1 <- downloadTracks(bnd)
 bnd <- c(52.46, 13.17, 52.33, 12.90) # Potsdam large
 ct2 <- downloadTracks(bnd)
+bnd <- c(52.56, 14.02, 52.52, 14.12) # Waldsieversdorf
+ct3 <- downloadTracks(bnd)
+
+
+bnd[1:2]-bnd[3:4]
+if(F) leaflet() %>% addTiles() %>% fitBounds(bnd[2],bnd[1],bnd[4],bnd[3]) %>% 
+                    addMarkers(lng=bnd[c(2,2,4,4)], lat=bnd[c(1,3,1,3)])
 
 
 
@@ -106,21 +109,23 @@ ct2 <- downloadTracks(bnd)
   rmap <- leaflet() %>% addTiles() %>% 
   addSearchOSM(options=searchOptions(autoCollapse=TRUE, minLength=2, hideMarkerOnCollapse=TRUE, zoom=16)) %>% 
   addControlGPS(options=gpsOptions(position="topleft", 
-                activate=TRUE, autoCenter=TRUE, maxZoom=16, setView=TRUE)) %>% 
+                activate=TRUE, autoCenter=FALSE, maxZoom=16, setView=TRUE)) %>% 
   addMeasure(primaryLengthUnit="kilometers", primaryAreaUnit="hectares",
             activeColor="#3D535D", completedColor="#7D4479", position="topleft") %>% 
   addScaleBar(position="topleft") %>% 
   addFullscreenControl() %>% 
-  setView(13.05, 52.4, zoom=13)
+  setView(14.08, 52.545, zoom=15) # 13.05, 52.4, zoom=13 for Potsdam
   # add grouped data:
-  rmap <- addGroups(rmap, ct1)
-  rmap <- addGroups(rmap, ct2)
+  #rmap <- addGroups(rmap, ct1)
+  #rmap <- addGroups(rmap, ct2)
+  rmap <- addGroups(rmap, ct3)
   # add background map layer options:
   prov <- c("OpenStreetMap", "Esri.WorldImagery", "OpenTopoMap") # mapview::mapviewGetOption("basemaps")
   for(pr in prov) rmap <- rmap %>% addProviderTiles(pr, group=pr)
   rmap <- rmap %>% addLayersControl(baseGroups=prov,
       overlayGroups=c("tracks","residential", "private", "large roads"),
       options=layersControlOptions(collapsed=FALSE))
+  #hideGroup("private", "large roads")
   rmap
   }
 
