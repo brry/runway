@@ -1,6 +1,17 @@
 # osm running tracks for given regions on interactive map
 # Berry Boessenkool, May 2020, berry-b@gmx.de
 
+message("Defining functions and loading packages...")
+
+locsel <- c(
+F, # 1 Sewekow
+F, # 2 Potsdam
+F, # 3 Waldsieversdorf
+T, # 4 Lychen
+NA
+)
+startview <- 4
+
 # 0. Packages ------------------------------------------------------------------
 library(leaflet) # leafletOutput, leaflet, addTiles, fitBounds, addMeasure, addPolylines, addPolygons
 library(leaflet.extras) # addControlGPS, gpsOptions
@@ -86,13 +97,11 @@ addGroups <- function(map, ct)
 # 2. Get data ------------------------------------------------------------------
 
 
-bnd <- c(53.28, 12.73, 53.21, 12.59) # Sewekow large
-ct1 <- downloadTracks(bnd)
-bnd <- c(52.46, 13.17, 52.33, 12.90) # Potsdam large
-ct2 <- downloadTracks(bnd)
-bnd <- c(52.56, 14.02, 52.52, 14.12) # Waldsieversdorf
-ct3 <- downloadTracks(bnd)
-
+message("Downloading tracks for ", sum(locsel,na.rm=T), " region",if(sum(locsel,na.rm=T)>1)"s", "...")
+bnd <- c(53.29, 12.73, 53.21, 12.58); if(locsel[1]) ct1 <- downloadTracks(bnd) # Sewekow large
+bnd <- c(52.46, 13.17, 52.33, 12.90); if(locsel[2]) ct2 <- downloadTracks(bnd) # Potsdam large
+bnd <- c(52.56, 14.02, 52.52, 14.12); if(locsel[3]) ct3 <- downloadTracks(bnd) # Waldsieversdorf
+bnd <- c(53.24, 13.24, 53.17, 13.42); if(locsel[4]) ct4 <- downloadTracks(bnd) # Lychen
 
 bnd[1:2]-bnd[3:4]
 if(F) leaflet() %>% addTiles() %>% fitBounds(bnd[2],bnd[1],bnd[4],bnd[3]) %>% 
@@ -103,26 +112,31 @@ if(F) leaflet() %>% addTiles() %>% fitBounds(bnd[2],bnd[1],bnd[4],bnd[3]) %>%
 # 3. Create map ----------------------------------------------------------------
 
 #leaflet() %>% addTiles() %>% addPolylines(data=tracks, popup=~popup)
-
+message("Creating map...")
   {
   # create map, add controls:
-  rmap <- leaflet() %>% addTiles() %>% 
+  rmap <- leaflet() %>% 
   addSearchOSM(options=searchOptions(autoCollapse=TRUE, minLength=2, hideMarkerOnCollapse=TRUE, zoom=16)) %>% 
   addControlGPS(options=gpsOptions(position="topleft", 
                 activate=TRUE, autoCenter=FALSE, maxZoom=16, setView=TRUE)) %>% 
   addMeasure(primaryLengthUnit="kilometers", primaryAreaUnit="hectares",
             activeColor="#3D535D", completedColor="#7D4479", position="topleft") %>% 
   addScaleBar(position="topleft") %>% 
-  addFullscreenControl() %>% 
-  setView(14.08, 52.545, zoom=15) # 13.05, 52.4, zoom=13 for Potsdam
+  addFullscreenControl()
+  if(startview==1) rmap <- setView(rmap, 12.652, 53.248, zoom=15) # Sewekow
+  if(startview==2) rmap <- setView(rmap, 13.05 , 52.4  , zoom=13) # Potsdam
+  if(startview==3) rmap <- setView(rmap, 14.08 , 52.545, zoom=15) # Waldsieversdorf
+  if(startview==4) rmap <- setView(rmap, 13.32 , 53.21 , zoom=13) # Lychen
   # add grouped data:
-  #rmap <- addGroups(rmap, ct1)
-  #rmap <- addGroups(rmap, ct2)
-  rmap <- addGroups(rmap, ct3)
+  if(locsel[1]) rmap <- addGroups(rmap, ct1)
+  if(locsel[2]) rmap <- addGroups(rmap, ct2)
+  if(locsel[3]) rmap <- addGroups(rmap, ct3)
+  if(locsel[4]) rmap <- addGroups(rmap, ct4)
   # add background map layer options:
-  prov <- c("OpenStreetMap", "Esri.WorldImagery", "OpenTopoMap") # mapview::mapviewGetOption("basemaps")
-  for(pr in prov) rmap <- rmap %>% addProviderTiles(pr, group=pr)
-  rmap <- rmap %>% addLayersControl(baseGroups=prov,
+  prov <- c(OSM="OpenStreetMap", Sat="Esri.WorldImagery", Topo="OpenTopoMap") # mapview::mapviewGetOption("basemaps")
+  for(pr in names(prov)) rmap <- rmap %>% addProviderTiles(unname(prov[pr]), group=pr, 
+                                          options=providerTileOptions(maxZoom=20))
+  rmap <- rmap %>% addLayersControl(baseGroups=names(prov),
       overlayGroups=c("tracks","residential", "private", "large roads"),
       options=layersControlOptions(collapsed=FALSE)) %>% 
   hideGroup(c("private", "large roads"))
@@ -131,7 +145,9 @@ if(F) leaflet() %>% addTiles() %>% fitBounds(bnd[2],bnd[1],bnd[4],bnd[3]) %>%
 
 # Export:
 if(T){
+message("Exporting map as html...")
 htmlwidgets::saveWidget(rmap, "index.html", selfcontained=TRUE)
+message("Changing html header...")
 # HTML head for mobile devices:
 # https://stackoverflow.com/questions/42702394/make-leaflet-map-mobile-responsive
 map_h <- readLines("index.html")
@@ -139,3 +155,5 @@ map_h <- sub('<title>leaflet</title>', x=map_h,
  '<meta name="viewport" content="width=device-width, initial-scale=1.0"/>\n<title>brry.github.io/runway</title>')
 writeLines(map_h, "index.html") ; rm(map_h)
 }  
+
+openFile("index.html")
