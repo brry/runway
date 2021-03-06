@@ -4,13 +4,13 @@
 message("Defining functions and loading packages...")
 
 locsel <- c(
-F, # 1 Sewekow
+T, # 1 Sewekow
 F, # 2 Potsdam
 F, # 3 Waldsieversdorf
-T, # 4 Lychen
+F, # 4 Lychen
 NA
 )
-startview <- 4
+startview <- 1
 
 # 0. Packages ------------------------------------------------------------------
 library(leaflet) # leafletOutput, leaflet, addTiles, fitBounds, addMeasure, addPolylines, addPolygons
@@ -118,7 +118,7 @@ message("Creating map...")
   rmap <- leaflet() %>% 
   addSearchOSM(options=searchOptions(autoCollapse=TRUE, minLength=2, hideMarkerOnCollapse=TRUE, zoom=16)) %>% 
   addControlGPS(options=gpsOptions(position="topleft", 
-                activate=TRUE, autoCenter=FALSE, maxZoom=16, setView=TRUE)) %>% 
+                activate=TRUE, autoCenter=TRUE, maxZoom=16, setView=TRUE)) %>% 
   addMeasure(primaryLengthUnit="kilometers", primaryAreaUnit="hectares",
             activeColor="#3D535D", completedColor="#7D4479", position="topleft") %>% 
   addScaleBar(position="topleft") %>% 
@@ -139,7 +139,7 @@ message("Creating map...")
   rmap <- rmap %>% addLayersControl(baseGroups=names(prov),
       overlayGroups=c("tracks","residential", "private", "large roads"),
       options=layersControlOptions(collapsed=FALSE)) %>% 
-  hideGroup(c("private", "large roads"))
+  hideGroup(c("private"))
   rmap
   }
 
