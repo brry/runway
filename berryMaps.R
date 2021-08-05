@@ -14,6 +14,7 @@ NA
 )
 startview <- 6
 
+
 # 0. Packages ------------------------------------------------------------------
 library(leaflet) # leafletOutput, leaflet, addTiles, fitBounds, addMeasure, addPolylines, addPolygons
 library(leaflet.extras) # addControlGPS, gpsOptions
