@@ -8,10 +8,11 @@ F, # 1 Sewekow
 F, # 2 Potsdam
 F, # 3 Waldsieversdorf
 F, # 4 Lychen
-T, # 5 Tapfheim
+F, # 5 Tapfheim
+T, # 6 Kitchener
 NA
 )
-startview <- 5
+startview <- 6
 
 # 0. Packages ------------------------------------------------------------------
 library(leaflet) # leafletOutput, leaflet, addTiles, fitBounds, addMeasure, addPolylines, addPolygons
@@ -104,6 +105,8 @@ bnd <- c(52.46, 13.17, 52.33, 12.90); if(locsel[2]) ct2 <- downloadTracks(bnd) #
 bnd <- c(52.56, 14.02, 52.52, 14.12); if(locsel[3]) ct3 <- downloadTracks(bnd) # Waldsieversdorf
 bnd <- c(53.24, 13.24, 53.17, 13.42); if(locsel[4]) ct4 <- downloadTracks(bnd) # Lychen
 bnd <- c(48.69, 10.65, 48.63, 10.76); if(locsel[5]) ct5 <- downloadTracks(bnd) # Tapfheim
+bnd <- c(43.50,-80.54, 43.42,-80.37); if(locsel[6]) ct6 <- downloadTracks(bnd) # Kitchener
+
 
 bnd[1:2]-bnd[3:4]
 if(F) leaflet() %>% addTiles() %>% fitBounds(bnd[2],bnd[1],bnd[4],bnd[3]) %>% 
@@ -130,12 +133,15 @@ message("Creating map...")
   if(startview==3) rmap <- setView(rmap, 14.08 , 52.545, zoom=15) # Waldsieversdorf
   if(startview==4) rmap <- setView(rmap, 13.32 , 53.21 , zoom=13) # Lychen
   if(startview==5) rmap <- setView(rmap, 10.70 , 48.67 , zoom=15) # Tapfheim
+  if(startview==6) rmap <- setView(rmap,-80.45 , 43.45 , zoom=15) # Kitchener
+    
   # add grouped data:
   if(locsel[1]) rmap <- addGroups(rmap, ct1)
   if(locsel[2]) rmap <- addGroups(rmap, ct2)
   if(locsel[3]) rmap <- addGroups(rmap, ct3)
   if(locsel[4]) rmap <- addGroups(rmap, ct4)
   if(locsel[5]) rmap <- addGroups(rmap, ct5)
+  if(locsel[6]) rmap <- addGroups(rmap, ct6)
   # add background map layer options:
   prov <- c(OSM="OpenStreetMap", Sat="Esri.WorldImagery", Topo="OpenTopoMap") # mapview::mapviewGetOption("basemaps")
   for(pr in names(prov)) rmap <- rmap %>% addProviderTiles(unname(prov[pr]), group=pr, 
