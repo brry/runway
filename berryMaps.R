@@ -3,22 +3,34 @@
 
 message("Defining functions and loading packages...")
 
-locsel <- c(
-F, # 1 Sewekow
-F, # 2 Potsdam
-F, # 3 Waldsieversdorf
-F, # 4 Lychen
-F, # 5 Tapfheim
-T, # 6 Kitchener
-NA
-)
-startview <- 6
-
-
 # 0. Packages ------------------------------------------------------------------
 library(leaflet) # leafletOutput, leaflet, addTiles, fitBounds, addMeasure, addPolylines, addPolygons
 library(leaflet.extras) # addControlGPS, gpsOptions
 library(osmdata) # opq, add_osm_feature, osmdata_sf
+
+
+# Locations --------------------------------------------------------------------
+
+loc <- read.table(header=TRUE, sep=",", text="
+n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
+1, 53.248,  12.652, 15, 53.29, 12.73, 53.21, 12.58,F,Sewekow
+2, 52.4  ,  13.05 , 13, 52.46, 13.17, 52.33, 12.90,F,Potsdam
+3, 52.545,  14.08 , 15, 52.56, 14.02, 52.52, 14.12,F,Waldsieversdorf
+4, 53.21 ,  13.32 , 13, 53.24, 13.24, 53.17, 13.42,F,Lychen
+5, 48.67 ,  10.70 , 15, 48.69, 10.65, 48.63, 10.76,F,Tapfheim
+6, 43.45 , -80.45 , 15, 43.50,-80.54, 43.42,-80.37,T,Kitchener
+7, 44.072, -81.753, 15, 44.19,-81.77, 43.91,-81.63,T,Cottage
+")
+
+startview <- 7
+if(F){
+bnd <- loc[startview,c("l","t","r","b")]
+leaflet() %>% addTiles() %>% 
+                fitBounds(bnd$l,bnd$t,bnd$r,bnd$b) %>% 
+                addMarkers(lng=unlist(loc[startview,c("l","l","r","r")]), 
+                           lat=unlist(loc[startview,c("b","t","b","t")]))
+rm(bnd)
+}
 
 
 # 1. Functions -----------------------------------------------------------------
@@ -100,19 +112,9 @@ addGroups <- function(map, ct)
 # 2. Get data ------------------------------------------------------------------
 
 
-message("Downloading tracks for ", sum(locsel,na.rm=T), " region",if(sum(locsel,na.rm=T)>1)"s", "...")
-bnd <- c(53.29, 12.73, 53.21, 12.58); if(locsel[1]) ct1 <- downloadTracks(bnd) # Sewekow large
-bnd <- c(52.46, 13.17, 52.33, 12.90); if(locsel[2]) ct2 <- downloadTracks(bnd) # Potsdam large
-bnd <- c(52.56, 14.02, 52.52, 14.12); if(locsel[3]) ct3 <- downloadTracks(bnd) # Waldsieversdorf
-bnd <- c(53.24, 13.24, 53.17, 13.42); if(locsel[4]) ct4 <- downloadTracks(bnd) # Lychen
-bnd <- c(48.69, 10.65, 48.63, 10.76); if(locsel[5]) ct5 <- downloadTracks(bnd) # Tapfheim
-bnd <- c(43.50,-80.54, 43.42,-80.37); if(locsel[6]) ct6 <- downloadTracks(bnd) # Kitchener
-
-
-bnd[1:2]-bnd[3:4]
-if(F) leaflet() %>% addTiles() %>% fitBounds(bnd[2],bnd[1],bnd[4],bnd[3]) %>% 
-                    addMarkers(lng=bnd[c(2,2,4,4)], lat=bnd[c(1,3,1,3)])
-
+message("Downloading tracks for ", sum(loc$sel,na.rm=T), " region",if(sum(loc$sel,na.rm=T)>1)"s", "...")
+ct <- list()
+for(i in which(loc$sel)) ct[[i]] <- downloadTracks(loc[i,c("t","l","b","r")])
 
 
 # 3. Create map ----------------------------------------------------------------
@@ -129,20 +131,9 @@ message("Creating map...")
             activeColor="#3D535D", completedColor="#7D4479", position="topleft") %>% 
   addScaleBar(position="topleft") %>% 
   addFullscreenControl()
-  if(startview==1) rmap <- setView(rmap, 12.652, 53.248, zoom=15) # Sewekow
-  if(startview==2) rmap <- setView(rmap, 13.05 , 52.4  , zoom=13) # Potsdam
-  if(startview==3) rmap <- setView(rmap, 14.08 , 52.545, zoom=15) # Waldsieversdorf
-  if(startview==4) rmap <- setView(rmap, 13.32 , 53.21 , zoom=13) # Lychen
-  if(startview==5) rmap <- setView(rmap, 10.70 , 48.67 , zoom=15) # Tapfheim
-  if(startview==6) rmap <- setView(rmap,-80.45 , 43.45 , zoom=15) # Kitchener
-    
+  rmap <- setView(rmap, loc[startview,"x"], loc[startview,"y"], zoom=loc[startview,"zm"])
   # add grouped data:
-  if(locsel[1]) rmap <- addGroups(rmap, ct1)
-  if(locsel[2]) rmap <- addGroups(rmap, ct2)
-  if(locsel[3]) rmap <- addGroups(rmap, ct3)
-  if(locsel[4]) rmap <- addGroups(rmap, ct4)
-  if(locsel[5]) rmap <- addGroups(rmap, ct5)
-  if(locsel[6]) rmap <- addGroups(rmap, ct6)
+  for(i in which(loc$sel)) rmap <- addGroups(rmap, ct[[i]])
   # add background map layer options:
   prov <- c(OSM="OpenStreetMap", Sat="Esri.WorldImagery", Topo="OpenTopoMap") # mapview::mapviewGetOption("basemaps")
   for(pr in names(prov)) rmap <- rmap %>% addProviderTiles(unname(prov[pr]), group=pr, 
