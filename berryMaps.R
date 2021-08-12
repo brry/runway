@@ -22,7 +22,7 @@ n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 7, 44.072, -81.753, 15, 44.19,-81.77, 43.91,-81.63,T,Cottage
 ")
 
-startview <- 7
+startview <- 6
 if(F){
 bnd <- loc[startview,c("l","t","r","b")]
 leaflet() %>% addTiles() %>% 
@@ -75,7 +75,7 @@ downloadTracks <- function(bbox)
   polygs$highway[is.na(polygs$highway)] <- "NA"
   
   bigstrt <- tracks$highway %in% c("primary", "secondary", "tertiary", "motorway", "motorway_link")
-  residen <- tracks$highway %in% c("residential", "service")#, "footway")
+  residen <- tracks$highway %in% c("residential", "service", "footway")
   private <- tracks$access  %in% c("no","private")
   if(is.null(tracks$access)) private <- FALSE
   
