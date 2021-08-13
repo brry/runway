@@ -22,7 +22,7 @@ n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 7, 44.072, -81.753, 15, 44.19,-81.77, 43.91,-81.63,T,Cottage
 ")
 
-startview <- 6
+startview <- 7
 if(F){
 bnd <- loc[startview,c("l","t","r","b")]
 leaflet() %>% addTiles() %>% 
