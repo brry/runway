@@ -14,7 +14,7 @@ library(osmdata) # opq, add_osm_feature, osmdata_sf
 loc <- read.table(header=TRUE, sep=",", text="
 n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 1, 53.248,  12.652, 15, 53.29, 12.73, 53.21, 12.58,T,Sewekow
-2, 52.4  ,  13.05 , 13, 52.46, 13.17, 52.33, 12.90,F,Potsdam
+2, 52.4  ,  13.05 , 13, 52.46, 13.17, 52.33, 12.90,T,Potsdam
 3, 52.545,  14.08 , 15, 52.56, 14.02, 52.52, 14.12,F,Waldsieversdorf
 4, 53.21 ,  13.32 , 13, 53.24, 13.24, 53.17, 13.42,F,Lychen
 5, 48.67 ,  10.70 , 15, 48.69, 10.65, 48.63, 10.76,F,Tapfheim
@@ -25,7 +25,7 @@ n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 10,51.595,  10.542, 15, 51.62, 10.50, 51.57, 10.58,F,BadSachsa
 ")
 
-startview <- 1
+startview <- 2
 if(F){
 bnd <- loc[startview,c("l","t","r","b")]
 leaflet() %>% addTiles() %>% 
