@@ -24,10 +24,16 @@ n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 9, 46.21 , -80.78 , 14, 46.35,-81.65, 45.88,-80.47,F,Killarney
 10,51.595,  10.542, 15, 51.62, 10.50, 51.57, 10.58,F,BadSachsa
 11,35.353,  24.306, 15, 35.45, 24.21, 35.20, 24.41,F,Kreta
-12,51.642,  13.708, 15, 51.70, 13.65, 51.59, 13.76,T,Finsterwalde
+12,51.642,  13.708, 15, 51.70, 13.65, 51.59, 13.76,F,Finsterwalde
+13,52.309,  13.446, 15, 0    ,     0,     0,     0,T,Rangsdorf
 ")
+loc$t[loc$t==0] <- loc$y[loc$t==0]+0.05
+loc$b[loc$b==0] <- loc$y[loc$b==0]-0.05
+loc$l[loc$l==0] <- loc$x[loc$l==0]-0.08
+loc$r[loc$r==0] <- loc$x[loc$r==0]+0.08
 
-startview <- 12
+
+startview <- 13
 if(F){
 bnd <- loc[startview,c("l","t","r","b")]
 leaflet() %>% addTiles() %>% 
@@ -80,6 +86,7 @@ downloadTracks <- function(bbox)
   polygs$highway[is.na(polygs$highway)] <- "NA"
   
   bigstrt <- tracks$highway %in% c("primary", "secondary", "tertiary", "motorway", "motorway_link")
+  if(!is.null(tracks$motorroad)) bigstrt <- bigstrt | sapply(tracks$motorroad=="yes", isTRUE)
   residen <- tracks$highway %in% c("residential", "service", "footway")
   private <- tracks$access  %in% c("no","private")
   if(is.null(tracks$access)) private <- FALSE
