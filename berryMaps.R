@@ -23,7 +23,7 @@ n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 8, 45.51 , -78.72 , 13, 46.05,-79.10, 45.34,-77.81,F,Algonquin
 9, 46.21 , -80.78 , 14, 46.35,-81.65, 45.88,-80.47,F,Killarney
 10,51.595,  10.542, 15, 51.62, 10.50, 51.57, 10.58,F,BadSachsa
-11,35.353,  24.306, 15, 35.45, 24.21, 35.20, 24.41,T,Kreta
+11,35.357,  24.271, 15, 35.49, 24.11, 35.00, 24.41,T,Kreta
 12,51.642,  13.708, 15, 51.70, 13.65, 51.59, 13.76,F,Finsterwalde
 13,52.309,  13.446, 15, 0    ,     0,     0,     0,F,Rangsdorf
 ")
@@ -85,7 +85,7 @@ downloadTracks <- function(bbox)
   tracks$highway[is.na(tracks$highway)] <- "NA"
   polygs$highway[is.na(polygs$highway)] <- "NA"
   
-  bigstrt <- tracks$highway %in% c("primary", "secondary", "tertiary", "motorway", "motorway_link")
+  bigstrt <- tracks$highway %in% c("primary", "secondary", "tertiary", "motorway", "motorway_link", "trunk")
   if(!is.null(tracks$motorroad)) bigstrt <- bigstrt | sapply(tracks$motorroad=="yes", isTRUE)
   residen <- tracks$highway %in% c("residential", "service", "footway")
   private <- tracks$access  %in% c("no","private")
