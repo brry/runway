@@ -14,7 +14,7 @@ library(osmdata) # opq, add_osm_feature, osmdata_sf
 loc <- read.table(header=TRUE, sep=",", text="
 n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 1, 53.248,  12.652, 15, 53.29, 12.58, 53.21, 12.73,F,Sewekow
-2, 52.4  ,  13.05 , 13, 52.46, 12.90, 52.33, 13.17,F,Potsdam
+2, 52.375,  13.125, 14, 52.40, 12.99, 52.31, 13.23,T,Potsdam
 3, 52.545,  14.08 , 15, 52.56, 14.02, 52.52, 14.12,F,Waldsieversdorf
 4, 53.21 ,  13.32 , 13, 53.24, 13.24, 53.17, 13.42,F,Lychen
 5, 48.67 ,  10.70 , 15, 48.69, 10.65, 48.63, 10.76,F,Tapfheim
@@ -23,7 +23,7 @@ n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 8, 45.51 , -78.72 , 13, 46.05,-79.10, 45.34,-77.81,F,Algonquin
 9, 46.21 , -80.78 , 14, 46.35,-81.65, 45.88,-80.47,F,Killarney
 10,51.595,  10.542, 15, 51.62, 10.50, 51.57, 10.58,F,BadSachsa
-11,35.357,  24.271, 15, 35.49, 24.11, 35.00, 24.41,T,Kreta
+11,35.357,  24.271, 15, 35.49, 24.11, 35.00, 24.41,F,Kreta
 12,51.642,  13.708, 15, 51.70, 13.65, 51.59, 13.76,F,Finsterwalde
 13,52.309,  13.446, 15, 0    ,     0,     0,     0,F,Rangsdorf
 ")
@@ -33,16 +33,15 @@ loc$l[loc$l==0] <- loc$x[loc$l==0]-0.08
 loc$r[loc$r==0] <- loc$x[loc$r==0]+0.08
 
 
-startview <- 11
+startview <- 2
 if(F){
 bnd <- loc[startview,c("l","t","r","b")]
 leaflet() %>% addTiles() %>% 
                 fitBounds(bnd$l,bnd$t,bnd$r,bnd$b) %>% 
                 addMarkers(lng=unlist(loc[startview,c("l","l","r","r")]), 
-                           lat=unlist(loc[startview,c("b","t","b","t")]))
+                           lat=unlist(loc[startview,c("b","t","b","t")]))%>% print()
 rm(bnd)
 }
-
 
 # 1. Functions -----------------------------------------------------------------
 # generate popup displays from df rows:
