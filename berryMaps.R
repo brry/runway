@@ -84,7 +84,7 @@ downloadTracks <- function(bbox)
   tracks$highway[is.na(tracks$highway)] <- "NA"
   polygs$highway[is.na(polygs$highway)] <- "NA"
   
-  bigstrt <- tracks$highway %in% c("primary", "secondary", "tertiary", "motorway", "motorway_link", "trunk")
+  bigstrt <- tracks$highway %in% c("primary", "secondary", "tertiary", "motorway", "motorway_link", "trunk", "trunk_link")
   if(!is.null(tracks$motorroad)) bigstrt <- bigstrt | sapply(tracks$motorroad=="yes", isTRUE)
   residen <- tracks$highway %in% c("residential", "service", "footway")
   private <- tracks$access  %in% c("no","private")
@@ -95,15 +95,17 @@ downloadTracks <- function(bbox)
   residen <- tracks[residen & !private,]
   private <- tracks[private,]
   
-  polygns <- polygs
+  polygns <- polygs[!polygs$access %in% c("no","private"), ]
+  polygpr <- polygs[ polygs$access %in% c("no","private"), ]
   
   rtracks$popup <- popleaf2(rtracks)
   bigstrt$popup <- popleaf2(bigstrt)
   residen$popup <- popleaf2(residen)
   private$popup <- popleaf2(private)
   polygns$popup <- popleaf2(polygns)
+  polygpr$popup <- popleaf2(polygpr)
  
-  list(bbox=bbox, rtracks=rtracks, bigstrt=bigstrt, residen=residen, private=private, polygns=polygns)
+  list(bbox=bbox, rtracks=rtracks, bigstrt=bigstrt, residen=residen, private=private, polygns=polygns, polygpr=polygpr)
   }
 
 
@@ -115,6 +117,7 @@ addGroups <- function(map, ct)
   if(!is.null(ct$private)) map <- addPolylines(map, data=ct$private, popup=~popup, col="red",    group="private")
   if(!is.null(ct$bigstrt)) map <- addPolylines(map, data=ct$bigstrt, popup=~popup, col="orange", group="large roads") ;  
   if(!is.null(ct$polygns)) map <- addPolygons( map, data=ct$polygns, popup=~popup, col="blue",   group="tracks")
+  if(!is.null(ct$polygpr)) map <- addPolygons( map, data=ct$polygpr, popup=~popup, col="red",    group="private")
   map
   }
 
@@ -139,7 +142,7 @@ message("Creating map...")
   addControlGPS(options=gpsOptions(position="topleft", 
                 activate=TRUE, autoCenter=TRUE, maxZoom=16, setView=TRUE)) %>% 
   addMeasure(primaryLengthUnit="kilometers", primaryAreaUnit="hectares",
-            activeColor="#3D535D", completedColor="#7D4479", position="topleft") %>% 
+            activeColor="#3D535D", completedColor="#FF0000", position="topleft") %>% 
   addScaleBar(position="topleft") %>% 
   addFullscreenControl()
   rmap <- setView(rmap, loc[startview,"x"], loc[startview,"y"], zoom=loc[startview,"zm"])
