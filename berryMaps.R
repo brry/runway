@@ -14,7 +14,7 @@ library(osmdata) # opq, add_osm_feature, osmdata_sf
 loc <- read.table(header=TRUE, sep=",", text="
 n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 1, 53.248,  12.652, 15, 53.29, 12.58, 53.21, 12.73,F,Sewekow
-2, 52.375,  13.125, 14, 52.40, 12.99, 52.31, 13.23,T,Potsdam
+2, 52.375,  13.125, 14, 52.40, 12.99, 52.31, 13.23,F,Potsdam
 3, 52.545,  14.08 , 15, 52.56, 14.02, 52.52, 14.12,F,Waldsieversdorf
 4, 53.21 ,  13.32 , 13, 53.24, 13.24, 53.17, 13.42,F,Lychen
 5, 48.67 ,  10.70 , 15, 48.69, 10.65, 48.63, 10.76,F,Tapfheim
@@ -26,6 +26,7 @@ n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 11,35.357,  24.271, 15, 35.49, 24.11, 35.00, 24.41,F,Kreta
 12,51.642,  13.708, 15, 51.70, 13.65, 51.59, 13.76,F,Finsterwalde
 13,52.309,  13.446, 15, 0    ,     0,     0,     0,F,Rangsdorf
+14,52.410,  12.975, 15, 0    ,     0,     0,     0,T,Golm
 ")
 loc$t[loc$t==0] <- loc$y[loc$t==0]+0.05
 loc$b[loc$b==0] <- loc$y[loc$b==0]-0.05
@@ -33,7 +34,7 @@ loc$l[loc$l==0] <- loc$x[loc$l==0]-0.08
 loc$r[loc$r==0] <- loc$x[loc$r==0]+0.08
 
 
-startview <- 2
+startview <- 14
 if(F){
 bnd <- loc[startview,c("l","t","r","b")]
 leaflet() %>% addTiles() %>% 
@@ -86,7 +87,8 @@ downloadTracks <- function(bbox)
   
   bigstrt <- tracks$highway %in% c("primary", "secondary", "tertiary", "motorway", "motorway_link", "trunk", "trunk_link")
   if(!is.null(tracks$motorroad)) bigstrt <- bigstrt | sapply(tracks$motorroad=="yes", isTRUE)
-  residen <- tracks$highway %in% c("residential", "service", "footway")
+  residen <- tracks$highway %in% c("residential", "service", "living_street")#, "footway")
+  if(!is.null(tracks$footway)) residen <- residen | sapply(tracks$footway=="sidewalk", isTRUE)
   private <- tracks$access  %in% c("no","private")
   if(is.null(tracks$access)) private <- FALSE
   
@@ -156,11 +158,11 @@ message("Creating map...")
       overlayGroups=c("tracks","residential", "private", "large roads"),
       options=layersControlOptions(collapsed=FALSE)) %>% 
   hideGroup(c("private"))
-  rmap
+  print(rmap)
   }
 
 # Export:
-if(T){
+if(F){
 message("Exporting map as html...")
 htmlwidgets::saveWidget(rmap, "index.html", selfcontained=TRUE)
 message("Changing html header...")
@@ -170,6 +172,6 @@ map_h <- readLines("index.html")
 map_h <- sub('<title>leaflet</title>', x=map_h,
  '<meta name="viewport" content="width=device-width, initial-scale=1.0"/>\n<title>brry.github.io/runway</title>')
 writeLines(map_h, "index.html") ; rm(map_h)
+openFile("index.html")
 }  
 
-openFile("index.html")
