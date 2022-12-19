@@ -14,7 +14,7 @@ library(osmdata) # opq, add_osm_feature, osmdata_sf
 loc <- read.table(header=TRUE, sep=",", text="
 n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 1, 53.248,  12.652, 15, 53.29, 12.58, 53.21, 12.73,F,Sewekow
-2, 52.375,  13.125, 14, 52.40, 12.99, 52.31, 13.23,F,Potsdam
+2, 52.375,  13.125, 14, 52.40, 12.99, 52.31, 13.23,T,Potsdam
 3, 52.545,  14.08 , 15, 52.56, 14.02, 52.52, 14.12,F,Waldsieversdorf
 4, 53.21 ,  13.32 , 13, 53.24, 13.24, 53.17, 13.42,F,Lychen
 5, 48.67 ,  10.70 , 15, 48.69, 10.65, 48.63, 10.76,F,Tapfheim
@@ -26,15 +26,17 @@ n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 11,35.357,  24.271, 15, 35.49, 24.11, 35.00, 24.41,F,Kreta
 12,51.642,  13.708, 15, 51.70, 13.65, 51.59, 13.76,F,Finsterwalde
 13,52.309,  13.446, 15, 0    ,     0,     0,     0,F,Rangsdorf
-14,52.410,  12.975, 15, 0    ,     0,     0,     0,T,Golm
+14,52.410,  12.975, 15, 0    ,     0,     0,     0,F,Golm
+15,49.924,  11.585, 14, 0    ,     0,     0,     0,F,Bayreuth
 ")
 loc$t[loc$t==0] <- loc$y[loc$t==0]+0.05
-loc$b[loc$b==0] <- loc$y[loc$b==0]-0.05
+loc$b[loc$b==0] <- loc$y[loc$b==0]-0.05 # loc$b <- ifelse(loc$b==0, loc$y-0.05, loc$b)
+# for(i in 1:nrow(loc)) 
 loc$l[loc$l==0] <- loc$x[loc$l==0]-0.08
 loc$r[loc$r==0] <- loc$x[loc$r==0]+0.08
 
 
-startview <- 14
+startview <- 2
 if(F){
 bnd <- loc[startview,c("l","t","r","b")]
 leaflet() %>% addTiles() %>% 
@@ -143,7 +145,7 @@ message("Creating map...")
   addSearchOSM(options=searchOptions(autoCollapse=TRUE, minLength=2, hideMarkerOnCollapse=TRUE, zoom=16)) %>% 
   addControlGPS(options=gpsOptions(position="topleft", 
                 activate=TRUE, autoCenter=TRUE, maxZoom=16, setView=TRUE)) %>% 
-  addMeasure(primaryLengthUnit="kilometers", primaryAreaUnit="hectares",
+  addMeasure(primaryLengthUnit="meters", primaryAreaUnit="hectares",
             activeColor="#3D535D", completedColor="#FF0000", position="topleft") %>% 
   addScaleBar(position="topleft") %>% 
   addFullscreenControl()
@@ -162,7 +164,7 @@ message("Creating map...")
   }
 
 # Export:
-if(F){
+if(T){
 message("Exporting map as html...")
 htmlwidgets::saveWidget(rmap, "index.html", selfcontained=TRUE)
 message("Changing html header...")
