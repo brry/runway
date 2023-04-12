@@ -1,7 +1,8 @@
 # runway
 suggest running tracks on an interactive map
 
-<https://brry.shinyapps.io/runway>
+<https://brry.shinyapps.io/runway>  
+<https://brry.github.io/runway>
 
 ### usage
 Zoom / pan to the area of interest, then click on `get running tracks`.  
