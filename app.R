@@ -9,7 +9,8 @@ library(osmdata) # opq, add_osm_feature, osmdata_sf
 
 default_map_area <- c(53.0,  12.0,  53.1,  12.1) # largebox >0.1 Test
 default_map_area <- c(53.22, 12.61, 53.20, 12.57) # Berlinchen
-default_map_area <- c(52.41, 13.04, 52.40, 13.03) # Potsdam
+default_map_area <- c(52.41, 13.04, 52.40, 13.03) # Potsdam groß
+default_map_area <- c(52.405, 13.035, 52.400, 13.030) # Potsdam klein
 if(F) {bnd <- default_map_area ; leaflet() %>% addTiles() %>% 
   fitBounds(bnd[2],bnd[1],bnd[4],bnd[3]) %>% 
   addMarkers(lng=bnd[c(2,2,4,4)], lat=bnd[c(1,3,1,3)])}
@@ -177,27 +178,36 @@ output$runwaymap <- renderLeaflet({
   bnd <- if(first) default_map_area else 
                    unlist(input$runwaymap_bounds, use.names=FALSE)
   # create map, add controls:
-  rmap <- leaflet() %>% addTiles() %>% fitBounds(bnd[2],bnd[1],bnd[4],bnd[3]) %>% 
-    addMeasure(primaryLengthUnit="kilometers", primaryAreaUnit="hectares",
-               activeColor="#3D535D", completedColor="#7D4479") %>% 
-    addControlGPS(options=gpsOptions(position="topleft", 
-                  activate=TRUE, autoCenter=TRUE, maxZoom=14, setView=TRUE))
+  rmap <- leaflet() %>% addTiles() %>% fitBounds(bnd[2],bnd[1],bnd[4],bnd[3])
+  rmap <- leaflet.extras::addSearchOSM(rmap, options=leaflet.extras::searchOptions(
+          autoCollapse=TRUE, minLength=2, hideMarkerOnCollapse=TRUE, zoom=16))
+  rmap <- leaflet.extras::addControlGPS(rmap, options=leaflet.extras::gpsOptions(
+          position="topleft", activate=TRUE, autoCenter=TRUE, maxZoom=16, setView=TRUE))
+  rmap <- leaflet::addMeasure(rmap, primaryLengthUnit="meters", primaryAreaUnit="sqmeters",
+          activeColor="#3D535D", completedColor="#FF0000", position="topleft")
+  rmap <- leaflet::addScaleBar(rmap, position="topleft")
+  rmap <- leaflet.extras::addFullscreenControl(rmap)
   # add grouped data:
   if(hastracks) {
-    rmap <- addPolylines(rmap, data=tracks,  popup=~popup, group="tracks")
-    rmap <- addPolylines(rmap, data=residen, popup=~popup, group="residential")
-    rmap <- addPolylines(rmap, data=private, popup=~popup, group="private")
+    rmap <- addPolylines(rmap, data=tracks,  popup=~popup, col="blue" , group="tracks")
+    rmap <- addPolylines(rmap, data=residen, popup=~popup, col="green", group="residential")
+    rmap <- addPolylines(rmap, data=private, popup=~popup, col="red"  , group="private")
     } else
     {
     rmap <- hideGroup(rmap, "tracks") %>% hideGroup("residential")
     }
   if(haspolygs) 
-    rmap <- addPolygons( rmap, data=ct$polygs, popup=~popup, group="tracks")
-  # add background map layer options:
-  prov <- c("OpenStreetMap", "CartoDB.Positron", "CartoDB.DarkMatter", 
-          "Esri.WorldImagery", "OpenTopoMap") # mapview::mapviewGetOption("basemaps")
-  for(pr in prov) rmap <- rmap %>% addProviderTiles(pr, group=pr)
-  rmap <- rmap %>% addLayersControl(baseGroups=prov,
+    rmap <- addPolygons( rmap, data=ct$polygs, popup=~popup, col="blue", group="tracks")
+  # add background map layer options, from mapview::mapviewGetOption("basemaps")
+  prov <- c(OSM="OpenStreetMap", 
+            Sat="Esri.WorldImagery", 
+            Topo="OpenTopoMap",
+            # CycleTF="Thunderforest.OpenCycleMap",
+            # Night="NASAGIBS.ViirsEarthAtNight2012",
+            Dark="CartoDB.DarkMatter") 
+  for(pr in names(prov)) rmap <- leaflet::addProviderTiles(rmap, provider=unname(prov[pr]), 
+          group=pr, options=leaflet::providerTileOptions(maxZoom=20))
+  rmap <- rmap %>% addLayersControl(baseGroups=names(prov),
       overlayGroups=c("tracks","residential", "private", "gpx"),
       options=layersControlOptions(collapsed=FALSE))
   rmap <- hideGroup(rmap, "private")
