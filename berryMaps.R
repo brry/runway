@@ -29,7 +29,8 @@ n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 14,52.410,  12.975, 15, 0    ,     0,     0,     0,F,Golm
 15,49.924,  11.585, 14, 0    ,     0,     0,     0,F,Bayreuth
 16,28.967, -13.670, 15, 0    ,     0,     0,     0,F,Lanzarote
-17,56.372,  15.517, 15, 0    ,     0,     0,     0,T,Stensjoe
+17,56.372,  15.517, 15, 0    ,     0,     0,     0,F,Stensjoe
+18,54.440,  12.683, 15, 0.   ,     0,     0,     0,T,Zingst
 ")
 loc$t[loc$t==0] <- loc$y[loc$t==0]+0.05
 loc$b[loc$b==0] <- loc$y[loc$b==0]-0.05 # loc$b <- ifelse(loc$b==0, loc$y-0.05, loc$b)
@@ -38,7 +39,7 @@ loc$l[loc$l==0] <- loc$x[loc$l==0]-0.08
 loc$r[loc$r==0] <- loc$x[loc$r==0]+0.08
 
 
-startview <- 17
+startview <- 18
 if(F){
 bnd <- loc[startview,c("l","t","r","b")]
 leaflet() %>% addTiles() %>% 
