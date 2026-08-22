@@ -14,12 +14,12 @@ library(osmdata) # opq, add_osm_feature, osmdata_sf
 loc <- read.table(header=TRUE, sep=",", text="
 n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 1, 53.248,  12.652, 15, 53.29, 12.58, 53.21, 12.73,F,Sewekow
-2, 52.375,  13.125, 14, 0    ,     0,     0,     0,T,Potsdam
+2, 52.375,  13.125, 14, 0    ,     0,     0,     0,F,Potsdam
 3, 52.545,  14.08 , 15, 52.56, 14.02, 52.52, 14.12,F,Waldsieversdorf
 4, 53.21 ,  13.32 , 13, 53.24, 13.24, 53.17, 13.42,F,Lychen
 5, 48.67 ,  10.70 , 15, 48.69, 10.65, 48.63, 10.76,F,Tapfheim
-6, 43.45 , -80.45 , 15, 43.50,-80.54, 43.42,-80.37,T,Kitchener
-7, 44.072, -81.753, 15, 44.19,-81.77, 43.91,-81.63,T,Cottage
+6, 43.45 , -80.45 , 15, 43.50,-80.54, 43.42,-80.37,F,Kitchener
+7, 44.072, -81.753, 15, 44.19,-81.77, 43.91,-81.63,F,Cottage
 8, 45.51 , -78.72 , 13, 46.05,-79.10, 45.34,-77.81,F,Algonquin
 9, 46.21 , -80.78 , 14, 46.35,-81.65, 45.88,-80.47,F,Killarney
 10,51.595,  10.542, 15, 51.62, 10.50, 51.57, 10.58,F,BadSachsa
@@ -32,6 +32,8 @@ n, y     ,  x     , zm, t    , l    , b    , r    ,sel,Ort
 17,56.372,  15.517, 15, 0    ,     0,     0,     0,F,Stensjoe
 18,54.440,  12.683, 15, 0.   ,     0,     0,     0,F,Zingst
 19,52.204,  14.430, 15, 0.   ,     0,     0,     0,F,Mixdorf
+20,43.335, -88.257, 15, 0.   ,     0,     0,     0,T,Slinger
+21,43.335, -88.257, 15, 43.35,-88.24, 43.32,-88.27,F,Slinger_smaller
 ")
 loc$t[loc$t==0] <- loc$y[loc$t==0]+0.05
 loc$b[loc$b==0] <- loc$y[loc$b==0]-0.05 # loc$b <- ifelse(loc$b==0, loc$y-0.05, loc$b)
@@ -40,7 +42,7 @@ loc$l[loc$l==0] <- loc$x[loc$l==0]-0.08
 loc$r[loc$r==0] <- loc$x[loc$r==0]+0.08
 
 
-startview <- 2
+startview <- 20
 if(F){
 bnd <- loc[startview,c("l","t","r","b")]
 leaflet() %>% addTiles() %>% 
@@ -48,6 +50,7 @@ leaflet() %>% addTiles() %>%
                 addMarkers(lng=unlist(loc[startview,c("l","l","r","r")]), 
                            lat=unlist(loc[startview,c("b","t","b","t")]))%>% print()
 rm(bnd)
+stop("stopping for boundary view")
 }
 
 # 1. Functions -----------------------------------------------------------------
@@ -133,6 +136,16 @@ addGroups <- function(map, ct)
 
 # 2. Get data ------------------------------------------------------------------
 
+if(F){message("Setting mirror")
+osmdata::set_overpass_url(c(
+"https://overpass-api.de/api/interpreter", # default
+"https://overpass.kumi.systems/api/interpreter",
+"https://overpass.osm.rambler.ru/cgi/interpreter",
+"https://api.openstreetmap.fr/oapi/interpreter",
+"https://overpass.osm.vi-di.fr/api/interpreter",
+"https://overpass.private.coffee/api/interpreter",
+"https://overpass.openstreetmap.ru/api/interpreter")[5])
+}
 
 message("Downloading tracks for ", sum(loc$sel,na.rm=T), " region",if(sum(loc$sel,na.rm=T)>1)"s", "...")
 ct <- list()
